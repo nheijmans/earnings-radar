@@ -1,0 +1,10 @@
+{
+  "tickers": [
+    { "symbol": "CRWD", "name": "CrowdStrike" },
+    { "symbol": "NOW",  "name": "ServiceNow" },
+    { "symbol": "TEAM", "name": "Atlassian" },
+    { "symbol": "AMZN", "name": "Amazon" },
+    { "symbol": "CRM",  "name": "Salesforce" },
+    { "symbol": "PANW", "name": "Palo Alto Networks" }
+  ]
+}

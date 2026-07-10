@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Local state and secrets — never commit
+*.db
+.env
+/data/
+
+.DS_Store

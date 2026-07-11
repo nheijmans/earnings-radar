@@ -48,28 +48,40 @@ Locally:
 
 ```bash
 pip install -r requirements.txt
-cp .env.example .env          # fill in the three values above
+cp .env.example .env          # fill in NTFY_TOPIC and SEC_USER_AGENT
 set -a; source .env; set +a
 STATE_DB_PATH=./earnings-radar.db python earnings_radar.py
 ```
 
 Run it twice — the second run should find no *new* filings, confirming dedup works.
 
-## Docker
+## Docker Compose (recommended for a homelab)
+
+The script runs one pass and exits; `docker-compose.yml` wraps it in a loop so
+the container runs immediately and then **every 4 hours**, with no host cron.
+State lives on a named volume, so dedup survives restarts and reboots.
 
 ```bash
-docker build -t earnings-radar .
-docker run --rm --env-file .env -v "$PWD/data:/data" earnings-radar
+git clone <your-repo-url> earnings-radar && cd earnings-radar
+cp .env.example .env          # then edit: set NTFY_TOPIC and SEC_USER_AGENT
+docker compose up -d --build  # builds the image and starts the scheduler
 ```
 
-The container does one pass and exits. The `-v` mount keeps the SQLite state
-(`/data/earnings-radar.db`) across runs so dedup survives restarts — set
-`STATE_DB_PATH=/data/earnings-radar.db` in your `.env`.
+`.env` is gitignored, so it is **not** in the clone — you must create it on the
+host (the step above). Then:
 
-To run it on a schedule, let host cron fire the container. `crontab -e`:
+```bash
+docker compose logs -f        # watch it run
+docker compose down           # stop it
+```
 
-```cron
-*/20 * * * * docker run --rm --env-file /home/you/earnings-radar/.env -v /home/you/earnings-radar/data:/data earnings-radar
+To change the cadence, edit the `sleep 14400` (seconds) in the `entrypoint` of
+`docker-compose.yml` — e.g. `3600` for hourly — and `docker compose up -d`.
+
+### One-off run (no schedule)
+
+```bash
+docker compose run --rm --entrypoint python earnings-radar earnings_radar.py
 ```
 
 ## Config

@@ -1,0 +1,17 @@
+services:
+  earnings-radar:
+    build: .
+    env_file: .env
+    environment:
+      # Keep state on the named volume so dedup survives restarts.
+      STATE_DB_PATH: /data/earnings-radar.db
+    volumes:
+      - radar-data:/data
+    restart: unless-stopped
+    # Run one pass immediately, then every 4 hours (14400s). Change the sleep
+    # to re-tune the cadence. `restart: unless-stopped` brings it back after a
+    # host reboot.
+    entrypoint: ["sh", "-c", "while true; do python earnings_radar.py; sleep 14400; done"]
+
+volumes:
+  radar-data:

@@ -5,6 +5,7 @@
     { "symbol": "TEAM", "name": "Atlassian" },
     { "symbol": "AMZN", "name": "Amazon" },
     { "symbol": "CRM",  "name": "Salesforce" },
-    { "symbol": "PANW", "name": "Palo Alto Networks" }
+    { "symbol": "PANW", "name": "Palo Alto Networks" },
+    { "symbol": "NFLX", "name": "Netflix" }
   ]
 }

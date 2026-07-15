@@ -93,6 +93,28 @@ def exhibit_links(cik, access):
         return {}
 
 
+def emit_event(events_dir, *, symbol, name, access, filed, report_url, presentation_url, filing_url):
+    """Write a JSON event so a downstream tool can react to a detected filing.
+
+    Written atomically (temp file + rename) so a reader never sees a partial
+    file. Opt-in: only called when EVENTS_DIR is set.
+    """
+    os.makedirs(events_dir, exist_ok=True)
+    path = os.path.join(events_dir, f"{access}.json")
+    tmp = f"{path}.tmp"
+    with open(tmp, "w", encoding="utf-8") as fh:
+        json.dump({
+            "ticker": symbol,
+            "name": name,
+            "accession": access,
+            "filed": filed,
+            "report_url": report_url,
+            "presentation_url": presentation_url,
+            "filing_url": filing_url,
+        }, fh, indent=2)
+    os.replace(tmp, path)
+
+
 def notify(title, message, click_url, actions=()):
     server = os.environ.get("NTFY_SERVER", "https://ntfy.sh")
     headers = {"Title": title, "Priority": "4",
@@ -112,6 +134,7 @@ def main():
     follow_list = os.environ.get("FOLLOW_LIST_PATH", "follow_list.json")
     db_path = os.environ.get("STATE_DB_PATH", "earnings-radar.db")
     lookback = int(os.environ.get("LOOKBACK_DAYS", "3"))
+    events_dir = os.environ.get("EVENTS_DIR", "")  # opt-in filing events for downstream tools
 
     with open(follow_list) as fh:
         tickers = json.load(fh)["tickers"]
@@ -151,6 +174,13 @@ def main():
                        actions=actions[:3])  # ntfy allows up to 3 tap actions
                 db.execute("INSERT OR IGNORE INTO seen VALUES (?)", (access,))
                 db.commit()
+                if events_dir:
+                    try:
+                        emit_event(events_dir, symbol=symbol, name=name, access=access,
+                                   filed=filed, report_url=report,
+                                   presentation_url=presentation, filing_url=filing_url)
+                    except Exception:
+                        log.exception("failed to emit event for %s", access)
         except Exception:
             log.exception("failed on %s", symbol)
 

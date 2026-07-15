@@ -23,6 +23,35 @@ the press release (EX-99.1) and, when present, the presentation / CFO commentary
 The only data source is SEC EDGAR (free, no API key). All ~100 lines live in
 [`earnings_radar.py`](earnings_radar.py).
 
+```mermaid
+flowchart TD
+    subgraph radar["earnings-radar · one pass, every 4h"]
+        A["load follow_list.json"] --> B["resolve tickers → CIK"]
+        B --> C{"for each ticker"}
+        C --> D["fetch submissions feed"]
+        D --> E["keep new 8-K<br/>with Item 2.02"]
+        E --> F{"seen before?"}
+        F -- yes --> C
+        F -- no --> G["fetch EX-99.1 / 99.2<br/>exhibit links"]
+        G --> H["push alert to ntfy"]
+        H --> I["record in SQLite"]
+        I --> J{"EVENTS_DIR set?"}
+        J -- no --> C
+        J -- yes --> K["write events/&lt;accession&gt;.json"]
+        K --> C
+    end
+
+    SEC[("SEC EDGAR")]
+    NT(["ntfy → your phone"])
+    AG(["statixs-agency<br/>earnings_analyst"])
+
+    B -. reads .-> SEC
+    D -. reads .-> SEC
+    G -. reads .-> SEC
+    H -. push .-> NT
+    K -. optional handoff .-> AG
+```
+
 **Limitation:** EDGAR covers US filers only, so non-US tickers (ASML, Adyen)
 aren't supported.
 
